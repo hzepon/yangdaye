@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>高企收入和资产增长率计算器（紧凑版右侧结果）</title>
+<style>
+* {box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;}
+body {background-color: #f5f7fa; color: #333; line-height: 1.6; padding: 20px; max-width: 1000px; margin: 0 auto;}
+header {text-align: center; margin-bottom: 20px; padding: 15px;
+    background: linear-gradient(135deg, #2c3e50, #4ca1af); color: white; border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);}
+h1 {font-size: 1.8rem;}
+.container {display: flex; gap: 20px; flex-wrap: wrap;}
+@media (max-width: 768px){.container {flex-direction: column;}}
+.panel {flex: 1; min-width: 300px; background: white; border-radius: 10px; padding: 15px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);}
+h2 {color: #2c3e50; margin-bottom: 15px; padding-bottom: 5px; border-bottom: 2px solid #e8eaed; text-align: center;}
+.form-group {margin-bottom: 10px;}
+label {display: block; margin-bottom: 3px; font-weight: bold; color: #555;}
+input {width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px;}
+button {background: #3498db; color: white; border: none; padding: 6px 10px; border-radius: 5px;
+    cursor: pointer; font-size: 13px; font-weight: bold; margin: 2px; transition: background 0.3s;}
+button:hover {background: #2980b9;}
+.calc-row {display:flex; align-items:center; gap:10px; margin-top:5px;}
+.result {background-color: #e8f4fc; padding: 6px 10px; border-radius: 5px; font-size: 14px; display: flex; gap: 10px;}
+.result div span {font-weight: bold; font-size: 1.1rem; color: #2c3e50;}
+.instructions {background-color: #e8f4fc; padding: 10px; border-radius: 5px; margin-top: 10px; font-size: 0.85rem;}
+.instructions h3 {margin-top: 0; color: #2c3e50; font-size: 1rem;}
+.highlight {font-weight: bold;}
+.formula {background-color: #f9f9f9; padding: 8px; border-radius: 5px; margin-top: 10px; font-size: 0.85rem;}
+</style>
+</head>
+<body>
+<header>
+    <h1>高企计算器</h1>
+</header>
+
+<div class="container">
+    <!-- 销售收入 -->
+    <div class="panel">
+        <h2>销售收入计算</h2>
+        <div class="form-group">
+            <label for="s1">第一年销售收入（万元）</label>
+            <input type="number" id="s1" value="16000">
+        </div>
+        <div class="form-group">
+            <label for="s2">第二年销售收入（万元）</label>
+            <input type="number" id="s2" value="2400">
+        </div>
+        <div class="form-group">
+            <label for="s3">第三年销售收入（万元）</label>
+            <input type="number" id="s3" value="8000">
+        </div>
+        <div class="calc-row">
+            <button onclick="calculateSalesGrowth()">计算增长率</button>
+            <div id="salesResult" class="result" style="display:flex;">
+                <div>增长率: <span id="salesGrowthResult"></span></div>
+                <div>得分: <span id="salesScoreResult"></span>/10</div>
+            </div>
+        </div>
+        <div class="formula">增长率 = ½ × (第二年/第一年 + 第三年/第二年) - 1<br>（若第一年为0，公式改为 第三年/第二年 - 1）</div>
+
+        <div class="instructions">
+            <h3>预估第三年销售收入</h3>
+            <button onclick="estimateSalesByRange(35)">≥35% (9-10分)</button>
+            <button onclick="estimateSalesByRange(25)">≥25% (7-8分)</button>
+            <button onclick="estimateSalesByRange(15)">≥15% (5-6分)</button>
+            <button onclick="estimateSalesByRange(5)">≥5% (3-4分)</button>
+            <button onclick="estimateSalesByRange(0)">≥0% (1-2分)</button>
+            <button onclick="estimateSalesByRange(-1)">＜0% (0分)</button>
+            <div id="salesEstimationResult" class="result" style="display:block; flex-direction:column; align-items:flex-start;">
+                <p>目标区间: <span id="targetSalesRange"></span></p>
+                <p class="highlight">第三年需达到: <span id="requiredSales"></span> 万元</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 净资产 -->
+    <div class="panel">
+        <h2>净资产计算</h2>
+        <div class="form-group">
+            <label for="a1">第一年末净资产（万元）</label>
+            <input type="number" id="a1" value="1000">
+        </div>
+        <div class="form-group">
+            <label for="a2">第二年末净资产（万元）</label>
+            <input type="number" id="a2" value="1500">
+        </div>
+        <div class="form-group">
+            <label for="a3">第三年末净资产（万元）</label>
+            <input type="number" id="a3" value="2000">
+        </div>
+        <div class="calc-row">
+            <button onclick="calculateAssetsGrowth()">计算增长率</button>
+            <div id="assetsResult" class="result" style="display:flex;">
+                <div>增长率: <span id="assetsGrowthResult"></span></div>
+                <div>得分: <span id="assetsScoreResult"></span>/10</div>
+            </div>
+        </div>
+        <div class="formula">增长率 = ½ × (第二年/第一年 + 第三年/第二年) - 1<br>（若第一年为0，公式改为 第三年/第二年 - 1）</div>
+
+        <div class="instructions">
+            <h3>预估第三年净资产</h3>
+            <button onclick="estimateAssetsByRange(35)">≥35% (9-10分)</button>
+            <button onclick="estimateAssetsByRange(25)">≥25% (7-8分)</button>
+            <button onclick="estimateAssetsByRange(15)">≥15% (5-6分)</button>
+            <button onclick="estimateAssetsByRange(5)">≥5% (3-4分)</button>
+            <button onclick="estimateAssetsByRange(0)">≥0% (1-2分)</button>
+            <button onclick="estimateAssetsByRange(-1)">＜0% (0分)</button>
+            <div id="assetsEstimationResult" class="result" style="display:block; flex-direction:column; align-items:flex-start;">
+                <p>目标区间: <span id="targetAssetsRange"></span></p>
+                <p class="highlight">第三年需达到: <span id="requiredAssets"></span> 万元</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function calculateScore(g){
+    if(g>=0.35) return 10;
+    if(g>=0.25) return 8;
+    if(g>=0.15) return 6;
+    if(g>=0.05) return 4;
+    if(g>=0) return 2;
+    return 0;
+}
+function calculateSalesGrowth(){
+    const s1=parseFloat(document.getElementById('s1').value)||0;
+    const s2=parseFloat(document.getElementById('s2').value)||0;
+    const s3=parseFloat(document.getElementById('s3').value)||0;
+    if(s2<=0){alert("第二年销售收入必须大于0"); return;}
+    let g;
+    if(s1===0){
+        g = s3/s2 - 1;
+    }else{
+        g = 0.5*(s2/s1 + s3/s2) - 1;
+    }
+    document.getElementById('salesGrowthResult').textContent=(g*100).toFixed(2)+'%';
+    document.getElementById('salesScoreResult').textContent=calculateScore(g);
+    document.getElementById('salesResult').style.display='flex';
+}
+function calculateAssetsGrowth(){
+    const a1=parseFloat(document.getElementById('a1').value)||0;
+    const a2=parseFloat(document.getElementById('a2').value)||0;
+    const a3=parseFloat(document.getElementById('a3').value)||0;
+    if(a2<=0){alert("第二年净资产必须大于0"); return;}
+    let g;
+    if(a1===0){
+        g = a3/a2 - 1;
+    }else{
+        g = 0.5*(a2/a1 + a3/a2) - 1;
+    }
+    document.getElementById('assetsGrowthResult').textContent=(g*100).toFixed(2)+'%';
+    document.getElementById('assetsScoreResult').textContent=calculateScore(g);
+    document.getElementById('assetsResult').style.display='flex';
+}
+function estimateSalesByRange(th){
+    const s1=parseFloat(document.getElementById('s1').value)||0;
+    const s2=parseFloat(document.getElementById('s2').value)||0;
+    if(s2<=0){alert("第二年销售收入必须大于0"); return;}
+    let tg=(th>=0?th/100:-0.01);
+    let s3;
+    if(s1===0){
+        s3 = (tg+1)*s2;
+    }else{
+        s3=(2*(tg+1)-(s2/s1))*s2;
+    }
+    document.getElementById('targetSalesRange').textContent=(th>=0?`≥${th}%`:'＜0%');
+    document.getElementById('requiredSales').textContent=s3.toFixed(2);
+    document.getElementById('salesEstimationResult').style.display='block';
+}
+function estimateAssetsByRange(th){
+    const a1=parseFloat(document.getElementById('a1').value)||0;
+    const a2=parseFloat(document.getElementById('a2').value)||0;
+    if(a2<=0){alert("第二年净资产必须大于0"); return;}
+    let tg=(th>=0?th/100:-0.01);
+    let a3;
+    if(a1===0){
+        a3 = (tg+1)*a2;
+    }else{
+        a3=(2*(tg+1)-(a2/a1))*a2;
+    }
+    document.getElementById('targetAssetsRange').textContent=(th>=0?`≥${th}%`:'＜0%');
+    document.getElementById('requiredAssets').textContent=a3.toFixed(2);
+    document.getElementById('assetsEstimationResult').style.display='block';
+}
+window.onload=function(){
+    calculateSalesGrowth();
+    calculateAssetsGrowth();
+}
+</script>
+</body>
+</html>
