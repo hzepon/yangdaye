@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>立也科技批量替换工具</title>
+  <style>
+    :root{
+      --bg:#0b1020; --card:#121a2c; --muted:#94a3b8; --text:#e2e8f0; --brand:#60a5fa; --ok:#34d399; --err:#f87171; --border:#1f2937;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", Helvetica, Arial; color:var(--text); background:radial-gradient(1200px 800px at 20% 0%,#0f172a 0,#0b1020 55%);}
+    .wrap{max-width:1100px; margin:32px auto; padding:0 16px}
+    .card{background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02)); border:1px solid var(--border); border-radius:16px; padding:20px; box-shadow:0 10px 30px rgba(0,0,0,.25)}
+    h1{font-size:22px; margin:0 0 8px}
+    .muted{color:var(--muted)}
+    .row{display:flex; gap:16px; flex-wrap:wrap}
+    .col{flex:1 1 320px}
+    .uploader{border:1px dashed #334155; border-radius:14px; padding:16px; text-align:center; cursor:pointer;}
+    .uploader input{display:none}
+    .btn{appearance:none; border:none; border-radius:12px; padding:10px 14px; font-weight:600; cursor:pointer; background:#1f2937; color:var(--text); transition:.2s}
+    .btn:hover{transform:translateY(-1px)}
+    .btn.primary{background:linear-gradient(135deg,#2563eb,#60a5fa)}
+    .btn.success{background:linear-gradient(135deg,#059669,#34d399)}
+    .btn.ghost{background:transparent; border:1px solid #334155}
+    .btn[disabled]{opacity:.5; cursor:not-allowed}
+    .grid{display:grid; grid-template-columns: 1fr 1fr; gap:10px}
+    .field{background:#0b1222; border:1px solid #1f2a44; border-radius:12px; padding:12px}
+    .field label{display:block; font-size:12px; color:var(--muted); margin-bottom:6px}
+    .field input[type="text"], .field input[type="search"], .field select{width:100%; background:#0a0f1d; border:1px solid #22314d; border-radius:10px; color:var(--text); padding:10px}
+    .taglist{border:1px solid #1f2a44; border-radius:12px; padding:8px;}
+    .tagitem{display:flex; align-items:center; gap:10px; padding:8px; border-bottom:1px dashed #1f2a44}
+    .tagitem:last-child{border-bottom:none}
+    .tag{font-family: ui-monospace, Menlo, Consolas, monospace; background:#0a0f1d; padding:2px 6px; border-radius:8px; border:1px solid #22314d}
+    .badge{display:inline-block; font-size:12px; padding:2px 8px; border-radius:999px; border:1px solid #1f2a44; color:var(--muted)}
+    details{border:1px solid #1f2a44; border-radius:12px; padding:10px}
+    summary{cursor:pointer; color:#cbd5e1; font-weight:600}
+    .footer{display:flex; gap:10px; justify-content:flex-end; margin-top:12px}
+    .error{color:var(--err); white-space:pre-wrap}
+    .ok{color:var(--ok)}
+    .hint{font-size:12px; color:#9aa7bd}
+    .pill{display:inline-flex; align-items:center; gap:6px; font-size:12px; padding:4px 8px; background:#0b1222; border:1px solid #1f2a44; border-radius:999px}
+    .val{flex:1; width:100%; min-width:200px; max-width:100%}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>立也科技批量替换工具 <span class="badge">免 VBA · 本地运行</span></h1>
+      <div class="muted">上传 .docx，自动识别 <span class="tag">&lt;&lt;占位符&gt;&gt;</span>，勾选并填写要替换的值，一键导出新文档。</div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <div class="row">
+        <div class="col" style="flex:1.2">
+          <label class="uploader" id="drop">
+            <input id="file" type="file" accept=".docx" />
+            <div>
+              <div style="font-weight:700; font-size:16px">点击或拖拽上传 DOCX</div>
+              <div class="muted" id="filehint">未选择文件</div>
+            </div>
+          </label>
+
+          <div class="grid" style="margin-top:16px">
+            <div class="field">
+              <label>占位符分隔符（开始）</label>
+              <input id="delimStart" type="text" value="&lt;&lt;" />
+            </div>
+            <div class="field">
+              <label>占位符分隔符（结束）</label>
+              <input id="delimEnd" type="text" value=">>" />
+            </div>
+            <div class="field">
+              <label>导出文件名</label>
+              <input id="outname" type="text" placeholder="原文件名-替换后.docx" />
+            </div>
+            <div class="field">
+              <label>筛选占位符</label>
+              <input id="search" type="search" placeholder="输入关键字过滤…" />
+            </div>
+          </div>
+
+          <div class="field" style="margin-top:16px">
+            <label>批量设置</label>
+            <div class="row">
+              <button id="checkAll" class="btn ghost">全选</button>
+              <button id="uncheckAll" class="btn ghost">全不选</button>
+              <button id="prefillDates" class="btn ghost">把“日期”类预填为今天</button>
+            </div>
+            <div style="height:10px"></div>
+            <details>
+              <summary>使用说明 / Tips</summary>
+              <div class="hint" style="margin-top:8px">
+                1）占位符可以跨段落、跨 run，本工具会用 Docxtemplater 正确识别。<br>
+                2）默认分隔符是 <span class="tag">&lt;&lt;</span> 和 <span class="tag">>></span>，可在上方修改。<br>
+                3）替换时，只会替换你勾选的项；未勾选的保持原样。<br>
+                4）完全本地运行，不会上传文档。
+              </div>
+            </details>
+          </div>
+        </div>
+
+        <div class="col" style="flex:1.5">
+          <div class="field">
+            <label>识别到的占位符 <span id="tagcount" class="pill">0 项</span></label>
+            <div class="taglist" id="taglist"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer">
+        <div id="status" class="hint"></div>
+        <button id="extract" class="btn">识别占位符</button>
+        <button id="export" class="btn primary" disabled>生成并下载</button>
+      </div>
+      <div id="error" class="error"></div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/pizzip@3.1.7/dist/pizzip.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/docxtemplater@3.47.3/build/docxtemplater.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+
+  <script>
+    let uploadedArrayBuffer = null;
+    let foundTags = [];
+    let originalFileName = '';
+    const $ = (sel)=>document.querySelector(sel);
+    const $$ = (sel)=>Array.from(document.querySelectorAll(sel));
+
+    const drop = $('#drop');
+    const fileInput = $('#file');
+    ['dragenter','dragover'].forEach(evt=>drop.addEventListener(evt,e=>{e.preventDefault(); drop.style.borderColor = '#60a5fa';}));
+    ;['dragleave','drop'].forEach(evt=>drop.addEventListener(evt,e=>{e.preventDefault(); drop.style.borderColor = '#334155';}));
+    drop.addEventListener('drop', (e)=>{
+      const f = e.dataTransfer.files && e.dataTransfer.files[0];
+      if (f) handleFile(f);
+    });
+    fileInput.addEventListener('change', (e)=>{
+      const f = e.target.files && e.target.files[0];
+      if (f) handleFile(f);
+    });
+
+    function handleFile(file){
+      if(!file.name.endsWith('.docx')){ showError('请选择 .docx 文件'); return; }
+      originalFileName = file.name.replace(/\.docx$/i, '');
+      const reader = new FileReader();
+      reader.onload = (e)=>{
+        uploadedArrayBuffer = e.target.result;
+        $('#filehint').textContent = `已选择：${file.name}`;
+        $('#status').textContent = '文件已加载，可点击“识别占位符”';
+        $('#export').disabled = true;
+        foundTags = [];
+        renderTagList();
+        if(!$('#outname').value){
+          $('#outname').value = `${originalFileName}-替换后.docx`;
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    $('#extract').addEventListener('click', ()=>{
+      clearError();
+      if(!uploadedArrayBuffer){ showError('请先上传 .docx 文件'); return; }
+      try{
+        const zip = new PizZip(uploadedArrayBuffer);
+        const doc = new window.docxtemplater(zip, {
+          paragraphLoop: true,
+          linebreaks: true,
+          delimiters: { start: $('#delimStart').value || '<<', end: $('#delimEnd').value || '>>' }
+        });
+        const full = doc.getFullText ? doc.getFullText() : '';
+        const start = escapeRegExp($('#delimStart').value || '<<');
+        const end = escapeRegExp($('#delimEnd').value || '>>');
+        const re = new RegExp(start + '\\s*([\\s\\S]*?)\\s*' + end,'g');
+        const set = new Set();
+        let m;
+        while((m = re.exec(full)) !== null){
+          const key = m[1].trim();
+          if(key) set.add(key);
+        }
+        foundTags = Array.from(set).sort((a,b)=>a.localeCompare(b,'zh-Hans-CN'));
+        renderTagList();
+        $('#status').textContent = `识别完成：共 ${foundTags.length} 个占位符`;
+        if(foundTags.length===0) showError('没有找到任何占位符，请确认分隔符是否正确');
+      }catch(err){
+        console.error(err);
+        showError('解析 DOCX 失败：' + (err.message || err));
+      }
+    });
+
+    function renderTagList(){
+      const list = $('#taglist');
+      list.innerHTML='';
+      const filter = ($('#search').value||'').trim();
+      const items = foundTags.filter(t=>!filter || t.includes(filter));
+      $('#tagcount').textContent = `${items.length} 项`;
+      items.forEach(tag=>{
+        const row = document.createElement('div');
+        row.className='tagitem';
+        row.innerHTML = `
+          <input type="checkbox" class="ck" id="ck_${cssId(tag)}" checked />
+          <label for="ck_${cssId(tag)}" class="tag">${escapeHtml($('#delimStart').value||'<<')}${escapeHtml(tag)}${escapeHtml($('#delimEnd').value||'>>')}</label>
+          <input type="text" class="val" id="val_${cssId(tag)}" placeholder="填写替换值…" />
+        `;
+        list.appendChild(row);
+      });
+    }
+
+    $('#search').addEventListener('input', renderTagList);
+
+    $('#checkAll').addEventListener('click', ()=>{$$('#taglist .ck').forEach(x=>x.checked=true)});
+    $('#uncheckAll').addEventListener('click', ()=>{$$('#taglist .ck').forEach(x=>x.checked=false)});
+    $('#prefillDates').addEventListener('click', ()=>{
+      const today = new Date();
+      const s = `${today.getFullYear()}年${today.getMonth()+1}月${today.getDate()}日`;
+      $$('#taglist .tag').forEach((el)=>{
+        if(/日期|date|time/i.test(el.textContent||'')){
+          const input = el.parentElement.querySelector('.val');
+          if(input && !input.value) input.value = s;
+        }
+      });
+    });
+
+    $('#export').addEventListener('click', generate);
+
+    async function generate(){
+      clearError();
+      if(!uploadedArrayBuffer){ showError('请先上传 .docx 文件'); return; }
+      const startDelim = $('#delimStart').value || '<<';
+      const endDelim = $('#delimEnd').value || '>>';
+      const data = {};
+      $$('#taglist .tagitem').forEach(row=>{
+        const ck = row.querySelector('.ck');
+        const tagLabel = row.querySelector('.tag').textContent;
+        const val = row.querySelector('.val').value;
+        if(ck && ck.checked){
+          const key = tagLabel.slice(startDelim.length, tagLabel.length - endDelim.length).trim();
+          data[key] = val;
+        }
+      });
+      try{
+        const zip = new PizZip(uploadedArrayBuffer);
+        const doc = new window.docxtemplater(zip, {
+          paragraphLoop: true,
+          linebreaks: true,
+          delimiters: { start: startDelim, end: endDelim }
+        });
+        doc.setData(data);
+        doc.render();
+        const blob = doc.getZip().generate({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+        const filename = ($('#outname').value && $('#outname').value.trim()) || `${originalFileName}-替换后.docx`;
+        saveAs(blob, filename);
+        $('#status').textContent = '已生成并下载完成';
+        $('#status').className = 'ok';
+      }catch(err){
+        console.error(err);
+        showError('生成失败：' + (err.message || err));
+      }
+    }
+
+    const observer = new MutationObserver(()=>{
+      $('#export').disabled = foundTags.length === 0;
+    });
+    observer.observe($('#tagcount'), { childList:true });
+
+    function showError(msg){ $('#error').textContent = msg; }
+    function clearError(){ $('#error').textContent = ''; }
+    function escapeRegExp(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+    function escapeHtml(s){ return s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;'); }
+    function cssId(s){ return btoa(unescape(encodeURIComponent(s))).replace(/[^a-z0-9]/gi,''); }
+  </script>
+</body>
+</html>
